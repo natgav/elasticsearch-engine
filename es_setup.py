@@ -3,7 +3,6 @@
 #start ES with /opt/homebrew/opt/elasticsearch-full/bin/elasticsearch
 #/opt/homebrew/opt/elasticsearch-full/bin/elasticsearch
 #TO STOP: brew services stop elasticsearch-full
-
 from elasticsearch import Elasticsearch, exceptions
 
 #connect to ES
@@ -47,7 +46,7 @@ except exceptions.RequestError as e:
     print("Error creating index:", e.info)
 
 
-#MANUALLY INJECTED THE INDEX USING
+#ALSO MANUALLY INJECTED THE INDEX USING
 # curl -X PUT "http://localhost:9200/newsgroups?pretty" -H 'Content-Type: application/json' -d'
 # {
 #   "settings": {

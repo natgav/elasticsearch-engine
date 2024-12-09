@@ -1,5 +1,6 @@
 #8
 #observes the performance of both basic and semantic search. 
+# This script evaluates the basic and semantic search methods using Precision@K and MRR metrics.
 # Metrics like Mean Reciprocal Rank (MRR) / Precision@K are calculated here to validate the implementation.
 # evaluation.py
 import numpy as np
@@ -16,7 +17,7 @@ data['processed_text'] = data['processed_text'].fillna('').astype(str)
 #SentenceTransformer model
 model = SentenceTransformer('all-MiniLM-L6-v2')  # all-MiniLM-L6-v2 No need to move the model to CUDA
 
-# Elasticsearch connection
+#Elasticsearch connection
 es = Elasticsearch("http://localhost:9200")
 index_name = "newsgroups"
 
@@ -24,9 +25,9 @@ index_name = "newsgroups"
 query_relevant_pairs = { #BETTER QUERIES - BETTER FOR SEMANTIC SEARCH
     "scientific advancements": data[data['target'].isin([11, 12, 13])]['_id'].tolist(), #11,12,13,14
     "emerging technology trends": data[data['target'].isin([1, 2, 3, 4])]['_id'].tolist(), #1,2,3,4,5
-} #previously used just "science" and "tehcnology"
+} #previously used just "science" and "tehcnology" to observe single-word query results.
 
-# Evaluate basic search
+#evaluate basic search
 def evaluate_basic_search(query_relevant_pairs, top_k=5): #5
     total_precision = 0
     total_mrr = 0
@@ -42,7 +43,7 @@ def evaluate_basic_search(query_relevant_pairs, top_k=5): #5
                         {"match_phrase": {"processed_text": {"query": query, "boost": 2}}},
                         {"terms": {"target": relevant_categories}}
                     ],
-                    "minimum_should_match": 1
+                    "minimum_should_match": 1 #aim for match to query within category
                 }
             },
             "size": top_k
@@ -87,6 +88,7 @@ def preprocess_query(query):
     query = ' '.join(query.split())
     return query
 
+#semantic search using cos similarity between query and doc embedding
 def evaluate_semantic_search(query_relevant_pairs, top_k=10, cosine_threshold=0.45):
     total_precision = 0
     total_mrr = 0
@@ -134,7 +136,7 @@ def evaluate_semantic_search(query_relevant_pairs, top_k=10, cosine_threshold=0.
     print(f"Semantic Search - Precision@{top_k}: {avg_precision:.4f}, MRR: {avg_mrr:.4f}")
     return avg_precision, avg_mrr
 
-#Run on Queries
+# run on queries
 if __name__ == "__main__":
     print("Evaluating Basic Search...")
     basic_precision, basic_mrr = evaluate_basic_search(query_relevant_pairs)

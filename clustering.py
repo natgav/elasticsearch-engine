@@ -1,4 +1,5 @@
 # #6
+# This script performs clustering on the preprocessed data and saves cluster labels to Elasticsearch.
 # #clustering functionality
 #performs clustering on the preprocessed data and save cluster labels to Elasticsearch.
 #enhances the search engine with topic-based clustering functionality.
@@ -12,18 +13,18 @@ from elasticsearch import Elasticsearch, helpers
 
 #load preprocessed data
 data = pd.read_csv("preprocessed_data.csv")
-data = data.dropna(subset=['processed_text'])
+data = data.dropna(subset=['processed_text']) #drop null texts
 
 
-# Vectorize processed text
-tfidf_vectorizer = TfidfVectorizer(max_features=1000)
+#vectorize processed text
+tfidf_vectorizer = TfidfVectorizer(max_features=1000) #use top 1000 features for cluster
 tfidf_matrix = tfidf_vectorizer.fit_transform(data['processed_text'])
 
-# Perform clustering
-kmeans = KMeans(n_clusters=20, random_state=42)
-data['cluster'] = kmeans.fit_predict(tfidf_matrix)
+#perform clustering with kmeans
+kmeans = KMeans(n_clusters=20, random_state=42) #20 topic clusters
+data['cluster'] = kmeans.fit_predict(tfidf_matrix) #add labels to data frame
 
-# Save clusters to Elasticsearch
+#Save clusters to elasticsearch
 es = Elasticsearch("http://localhost:9200")
 actions = [
     {
@@ -33,7 +34,7 @@ actions = [
             "text": row['text'],
             "processed_text": row['processed_text'],
             "target": int(row['target']),
-            "cluster": int(row['cluster'])
+            "cluster": int(row['cluster']) #cluster label
         }
     }
     for idx, row in data.iterrows()

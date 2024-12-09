@@ -1,5 +1,6 @@
 #7
 #Implement semantic search using embeddings. 
+# This script enhances search results by leveraging embeddings for contextual understanding.
 #builds on top of the search engine to provide deeper understanding and more relevant results.
 # semantic_search.py
 from sentence_transformers import SentenceTransformer, util
@@ -7,24 +8,22 @@ import pandas as pd
 import numpy as np
 import torch 
 
-# Load preprocessed data
-# data = pd.read_csv("preprocessed_data.csv")
-# data['processed_text'] = data['processed_text'].fillna('').astype(str)
+#Load preprocessed data 
 data = pd.read_csv("data_with_ids.csv")  # Load data with `_id`
 data['processed_text'] = data['processed_text'].fillna('').astype(str)
-# Ensure alignment of embeddings with `_id`
+#alignment of embeddings with `_id`
 data = data[data['processed_text'].str.split().str.len() > 2] #remove really short texts
-data.reset_index(drop=True, inplace=True)  # Reset the DataFrame index to align with embeddings
+data.reset_index(drop=True, inplace=True)  #reset the data frame index to align with embeddings
 
 
-# Load SentenceTransformer model all-mpnet-base-v2
+#Load SentenceTransformer model
 model = SentenceTransformer('all-MiniLM-L6-v2') #all-MiniLM-L6-v2
 embeddings = model.encode(data['processed_text'], convert_to_tensor=True)
-# Save embeddings for evaluation
+#save embeddings for evaluation
 np.save("embeddings.npy", embeddings.cpu().numpy())
 print("Embeddings saved to 'embeddings.npy'")
 
-#perform semantic search
+#perform semantic search with cos similarity between query and doc embedding
 def semantic_search(query, top_k=5, char_limit=300):
     
     query_embedding = model.encode(query, convert_to_tensor=True)
@@ -41,7 +40,7 @@ def semantic_search(query, top_k=5, char_limit=300):
 
     for idx, score in zip(retrieved_docs, scores):
         text = data.iloc[idx]['processed_text']
-        if text not in seen_texts:
+        if text not in seen_texts: #avoid duplicates
             unique_results.append((idx, score, text))
             seen_texts.add(text)
         if len(unique_results) == top_k:  #stop after top k unique results
@@ -53,16 +52,6 @@ def semantic_search(query, top_k=5, char_limit=300):
         print(f"Score: {score:.4f}")
         print(f"Text: {text[:char_limit]}{'...' if len(text) > char_limit else ''}\n")
     
-    # query_embedding = model.encode(query, convert_to_tensor=True)
-    # cosine_scores = util.pytorch_cos_sim(query_embedding, embeddings)
-    # top_results = np.argsort(-cosine_scores[0].cpu().numpy())[:top_k]
-
-    # print(f"Top {top_k} Results for Query: '{query}'")
-    # for idx in top_results:
-    #     score = cosine_scores[0][idx].item()
-    #     text = data.iloc[idx]['processed_text']
-    #     print(f"\nScore: {score:.4f}")
-    #     print(f"Text: {text[:char_limit]}{'...' if len(text) > char_limit else ''}\n")
 
 #run semantic search
 if __name__ == "__main__":
